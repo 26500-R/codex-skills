@@ -1,94 +1,64 @@
 ## What it does
 
-`setup-matt-pocock-skills` answers three questions about one repo: where issues live, what the triage labels are called, and where the domain docs sit. It records the answers as markdown files under `docs/agents/`.
+`setup-matt-pocock-skills` records persistent repository conventions for the issue tracker, triage labels, and domain docs. The configuration lives under `docs/agents/`, reached through the effective Codex `AGENTS.md` instructions.
 
-Those files are the only thing that varies between repos. The skills themselves are identical everywhere. They read `docs/agents/issue-tracker.md` at run time and do what it says. That is why the set is not tied to GitHub, and why you never edit a skill file to point it at another tracker. Invoking it with "link the skills to a custom issue tracker" works with anything you can connect to programmatically, with no changes to the skills.
-
-It is a prompt-driven skill, not a deterministic script. It reads your `git remote`, `CLAUDE.md` and `GLOSSARY.md`, proposes what it found, and waits for you to confirm before it writes anything.
+It reuses conventions and answers already present, asking only about unresolved material choices. Standalone review, debugging, and local implementation do not need this setup.
 
 ## When to reach for it
 
-You invoke this by typing `/setup-matt-pocock-skills`; the [agent](https://www.aihero.dev/ai-coding-dictionary/agent) won't reach for it on its own. Its metadata marks it non-invokable on purpose, so no other skill can fire it for you.
-
-Reach for it once per repo, before the first use of any other engineering skill. If [triage](https://aihero.dev/skills-triage), [to-spec](https://aihero.dev/skills-to-spec), [to-tickets](https://aihero.dev/skills-to-tickets) or [wayfinder](https://aihero.dev/skills-wayfinder) start guessing where your issues go, or apply labels your tracker doesn't have, this repo has not been set up yet. You can run it in a repo halfway through a project. The skill reads what is already there, so no earlier work is lost.
+Invoke `$setup-matt-pocock-skills`; it is not selected automatically. Use it when several skills should share tracker or documentation conventions, or when those conventions need to change. An explicit issue URL or local spec is enough for many one-off tasks.
 
 ## Prerequisites
 
-It writes into the repo you run it in:
+The workspace must allow the requested repository edits. Tracker label creation also needs the appropriate tracker access and must be within the requested setup scope.
 
-| It writes | Where |
+| Output | Location |
 | --- | --- |
-| `issue-tracker.md` | `docs/agents/` |
-| `domain.md` | `docs/agents/` |
-| `triage-labels.md` | `docs/agents/`, only when the `triage` skill is installed |
-| An `## Agent skills` block | whichever of `CLAUDE.md` or `AGENTS.md` already exists |
+| Issue tracker instructions | `docs/agents/issue-tracker.md` |
+| Domain-doc conventions | `docs/agents/domain.md` |
+| Triage role mapping, when triage is installed | `docs/agents/triage-labels.md` |
+| Pointers to these files | The effective `AGENTS.md`, override, or explicitly referenced canonical file |
 
-You commit all of it as markdown. There is no user-level or global mode. The config lives in the repo, so every repo gets its own copy.
+## The configuration choices
 
-## The three decisions
+| Choice | Default approach |
+| --- | --- |
+| Tracker | Reuse an established tracker; otherwise propose the remote's platform or local markdown |
+| Labels | Reuse clear existing labels, or the five state roles plus `bug` and `enhancement` |
+| Domain docs | Reuse the existing layout; otherwise a root glossary and ADR directory suit a single-context repo |
 
-It starts each section with the recommended answer, and skips any question its exploration already answered. Most runs need only two confirmations.
-
-| Decision | What it proposes | When it asks |
-| --- | --- | --- |
-| **Issue tracker** | the one matching your `git remote` | always, because this is the one real choice |
-| **Triage labels** | keep the five canonical names (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`) | only if the `triage` skill is installed |
-| **Domain docs** | single-context: one `GLOSSARY.md` plus `docs/adr/` at the root | only if it spots monorepo signals, and then it offers a multi-context `GLOSSARY-MAP.md` |
-
-The tracker options:
-
-| Option | Where issues live | Needs |
-| --- | --- | --- |
-| **GitHub** | the repo's GitHub Issues | the `gh` CLI |
-| **GitLab** | the repo's GitLab Issues | the `glab` CLI |
-| **Local markdown** | files under `.scratch/<feature>/` in this repo | nothing, not even a remote |
-| **Other** | wherever you say | one paragraph from you describing the workflow |
-
-The first three ship as templates in the skill and work out of the box. Local markdown is a full option, not a fallback. The skill supports a solo project with no remote. One caveat: don't use local markdown if you use GitHub. They are alternatives, so pick one.
-
-"Other" is a full option too. It is how Jira, Linear, Azure DevOps and Beads all work. You describe the workflow, the skill records your prose in `docs/agents/issue-tracker.md`, and the downstream skills follow the prose. Users have already built this: a Jira-over-[MCP](https://www.aihero.dev/ai-coding-dictionary/mcp) variant, a Gitea CLI shaped like `gh`, a hand-built local dashboard.
+GitHub, GitLab, and local markdown have seed templates. Other trackers use the workflow you describe. The output is ordinary markdown you can inspect and edit; setup does not rewrite the installed skills.
 
 ## Common questions
 
-**Do I have to use GitHub?**
+**What if this repo has `CLAUDE.md` but no `AGENTS.md`?**
 
-No. GitHub, GitLab and local markdown under `.scratch/` all ship as ready-made templates, and anything else works through the "other" path. This is the most-repeated question, in roughly these words: *"hard locked to github"*, *"can I use GitLab / Jira"*, *"what about Azure DevOps"*. The answer is always the same: setup chooses the tracker, not the skill.
+The skill creates `AGENTS.md` for Codex and preserves the existing file. If `AGENTS.override.md` supersedes the normal instructions, the pointers go in that effective file or its referenced canonical source. It does not assume a file is active just because it exists.
 
-**Do I need to re-run it after updating the skills?**
+**Does it create tracker labels?**
 
-The direct answer after v1.1 was yes. The skill's own closing message is softer. It tells you to re-run only to switch trackers or start over. Both are defensible. The seed templates change between versions, so a `docs/agents/issue-tracker.md` from an older release can go out of date against the skills that now read it. If a downstream skill does something different from what the docs describe, re-run setup. It is cheap.
+For authorized GitHub or GitLab setup, it creates missing configured labels. A local-only or draft-only request remains local. Existing label meanings are preserved; ambiguity is resolved before changing the mapping.
 
-**It wrote to `CLAUDE.md`, but I'm on Codex.**
+**Must I confirm every section?**
 
-This is a known gap, and still open. The file-selection rule is "edit `CLAUDE.md` if it exists, else `AGENTS.md`". It checks which file exists, not which [harness](https://www.aihero.dev/ai-coding-dictionary/harness) is running. In a repo with a `CLAUDE.md` left over from Claude Code, the skill writes its `## Agent skills` block to a file Codex never reads. Users have two workarounds: move the block to `AGENTS.md` by hand, or keep `AGENTS.md` canonical and make `CLAUDE.md` a one-line pointer at it. If neither file exists, the skill asks you which to create instead of picking one. This has confused people who expected it to decide.
+No. Existing configuration, explicit preferences, and prior authorization are reused. Only a material unresolved choice needs an answer.
 
-**It didn't create my triage labels.**
+**Where do communication preferences belong?**
 
-It doesn't. `docs/agents/triage-labels.md` is a *mapping*: it tells `/triage` which strings in your tracker correspond to the five canonical roles. It does not run `gh label create`. On a fresh GitHub repo the labels do not exist yet, and users have filed this as a bug more than once. Two consequences:
+In your effective `AGENTS.md` or the invocation. This setup configures tracker and domain-doc conventions, not general tone or a universal engineering pipeline.
 
-- If your tracker already uses the canonical names, the mapping is an identity table and there is nothing to configure. That is the intended common case, not a missing step.
-- This skill does not create [wayfinder](https://aihero.dev/skills-wayfinder)'s `wayfinder:map` and `wayfinder:<type>` labels either, and `gh issue create --label <missing>` fails instead of creating the label. Create them by hand before the first wayfinder run on a GitHub repo.
+**When should I rerun it?**
 
-**Can I configure the other skills' behaviour here ([grilling](https://www.aihero.dev/ai-coding-dictionary/grilling) cadence, question format, tone)?**
-
-No. It configures three things: tracker, labels, doc layout. Users have asked to make it the place for per-user preferences. The answer is that skills stay opinionated and take no per-user config. Preferences belong in your `CLAUDE.md` as plain instructions, which every skill already reads.
-
-**Can I keep the config in `~/.claude` instead of committing it to every repo?**
-
-Not today. A user who runs the skills across many repos has an open request for this, but no user-level mode exists. Every repo carries its own `docs/agents/`.
-
-**Isn't it strange to have a skill that configures the other skills?**
-
-One long-standing complaint says yes, in these words: *"having a skill to set up the other skill does not feel right to me: that means the LLM is configuring its own skills."* The trade-off is real. Without a setup step, every skill that touches issues would need its own copy of the tracker instructions. The output is markdown you can read and edit, and that limits the risk. You can read every file it wrote and change it by hand. Make day-to-day changes that way, not with another run.
+When the tracker or layout changes, or a template update matters to your workflow. Routine edits can be made directly in `docs/agents/`.
 
 ## It's working if
 
-- `docs/agents/issue-tracker.md` and `docs/agents/domain.md` exist, plus `triage-labels.md` if `triage` is installed.
-- An `## Agent skills` section appears in the instruction file your harness reads, with a one-line summary pointing at each of those files.
-- The tracker it proposed matches the remote you use, and the label strings match labels that exist in your tracker.
-- Afterwards, `/to-tickets` publishes without asking you where issues live, and `/triage` applies labels rather than inventing them.
-- Nothing in the skill files themselves changed. If setup edited a `SKILL.md`, something went wrong.
+- The pointers are in a Codex instruction file that is actually read.
+- Tracker and label choices match existing repository conventions.
+- The requested configuration is created without repeated confirmations.
+- Standalone work remains usable without setup.
+- No installed `SKILL.md` is changed by the setup run.
 
 ## Where it fits
 
-`setup-matt-pocock-skills` is the **run-once setup** for the engineering flow, the precondition everything else assumes rather than a step in the chain. Its neighbours are its readers: [triage](https://aihero.dev/skills-triage), which applies the label vocabulary written here; [to-spec](https://aihero.dev/skills-to-spec) and [to-tickets](https://aihero.dev/skills-to-tickets), which publish into the tracker named here; and [wayfinder](https://aihero.dev/skills-wayfinder), which reads the "Wayfinding operations" section of the same tracker file to learn how to store maps and child [tickets](https://www.aihero.dev/ai-coding-dictionary/ticket). [domain-modeling](https://aihero.dev/skills-domain-modeling) later fills in the domain-doc layout that setup records. It creates `GLOSSARY.md` and ADRs only when you resolve a term or decision, so a repo with no domain docs after setup is normal. For which skill to reach for next, [ask-matt](https://aihero.dev/skills-ask-matt) routes the whole set.
+This is optional repository configuration, not a prerequisite for every engineering task. [triage](https://github.com/26500-R/codex-skills/blob/codex/adaptation/docs/engineering/triage.md), [to-spec](https://github.com/26500-R/codex-skills/blob/codex/adaptation/docs/engineering/to-spec.md), [to-tickets](https://github.com/26500-R/codex-skills/blob/codex/adaptation/docs/engineering/to-tickets.md), and [wayfinder](https://github.com/26500-R/codex-skills/blob/codex/adaptation/docs/engineering/wayfinder.md) can reuse its tracker instructions. [domain-modeling](https://github.com/26500-R/codex-skills/blob/codex/adaptation/docs/engineering/domain-modeling.md) uses the domain-doc layout when records are requested or established by the repository workflow. [ask-matt](https://github.com/26500-R/codex-skills/blob/codex/adaptation/docs/engineering/ask-matt.md) is the router over the set.

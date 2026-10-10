@@ -1,7 +1,6 @@
 ---
 name: wait-what
 description: "Stop. That last message did not land: re-pitch it."
-disable-model-invocation: true
 ---
 
-Wait, I don't understand where you've got to here. Re-pitch that: give me a little bit of context, talk in ASD-STE100 Simplified Technical English, and use the ubiquitous language from `GLOSSARY.md` (follow `GLOSSARY-MAP.md` to the right one if the repo has more than one).
+Re-explain the point the user lost track of. Supply the missing context, use plain language in the user's language, and preserve the project's established terms. If `GLOSSARY.md` exists, follow it (and `GLOSSARY-MAP.md` when relevant); otherwise use the terms already in the conversation without creating glossary files.

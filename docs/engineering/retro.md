@@ -2,13 +2,13 @@
 
 `retro` looks back over a coding [session](https://www.aihero.dev/ai-coding-dictionary/session) and suggests improvements to the agent's **[environment](https://www.aihero.dev/ai-coding-dictionary/environment)**, so the next run goes better. It reads the session's own record (the current one by default, or one you point it at in the session logs). It finds the moments where the agent struggled, and gives you a list of candidate fixes, most severe first.
 
-It changes the environment, not the code. Take the bug the agent shipped, the file it needed twenty [tool calls](https://www.aihero.dev/ai-coding-dictionary/tool-call) to find, or the rule the reviewer missed. `retro` does not fix any of them directly. It asks what in the repo let them happen, and proposes the check, pointer, or standard that prevents them next time. It also only proposes. Nothing changes until you pick a candidate.
+It proposes changes to the environment. Take the bug the agent shipped, the file it needed twenty [tool calls](https://www.aihero.dev/ai-coding-dictionary/tool-call) to find, or the rule the reviewer missed. `retro` does not fix any of them directly. It asks what in the repo let them happen, and proposes the check, pointer, or standard that prevents them next time. It only proposes unless you have also requested implementation of the improvements.
 
 ## When to reach for it
 
-You invoke this by typing `/retro`, and the agent won't reach for it on its own.
+You invoke this by typing `$retro`, and the agent won't reach for it on its own.
 
-Reach for it at the end of a session that was harder than it should have been. For example, the agent searched too long for something, made a mistake a tool could have caught, or needed information it could not get. A smooth session has little to teach, and the findings come from the difficult ones. If you want a verdict on the code the session produced, use [code-review](https://aihero.dev/skills-code-review) instead.
+Reach for it at the end of a session that was harder than it should have been. For example, the agent searched too long for something, made a mistake a tool could have caught, or needed information it could not get. A session with no supported findings can return no recommendations. If you want a verdict on the code the session produced, use [code-review](https://github.com/26500-R/codex-skills/blob/codex/adaptation/docs/engineering/code-review.md) instead.
 
 ## Where the findings land
 
@@ -19,20 +19,20 @@ Each candidate belongs to one category, and the category decides where the fix g
 | The agent took a long time to find a file or fact | A **navigation pointer** from a file it already reads |
 | It made a mistake a tool could have caught | An **[automated check](https://www.aihero.dev/ai-coding-dictionary/automated-check)**: lint rule, type, test, pre-commit hook, CI job |
 | The reviewer missed a judgement-call mistake | A rule in `CODING_STANDARDS.md` for the reviewer agent |
-| `AGENTS.md` or `CLAUDE.md` is large | Move its steering out, into standards or checks |
+| Persistent instructions obscure the guidance needed for the task | Prune duplication or move conditional detail into a linked reference |
 | A tool call was expensive for what it returned | Streamline the tool, or replace it |
 | A steering file is full of lines that change nothing | Delete the **no-ops** |
 | The agent needed information it couldn't reach | Widen its access: tee the dev server log to a file, give read-only access to a service |
 
-The leading idea is that standards belong to the **reviewer**, not the implementer. The implementing agent has the most context pressure, because it explores, writes code, and debugs failures. The reviewing agent gets a diff and nothing else. So a new rule goes where there is room to apply it, which is review. It never goes in [AGENTS.md](https://www.aihero.dev/ai-coding-dictionary/agents-md), which loads into every session's [context window](https://www.aihero.dev/ai-coding-dictionary/context-window) whether it is relevant or not.
+Put guidance where it is needed: implementation constraints should be discoverable before coding, and review should independently check the result. A reviewer may need requirements and surrounding code as well as a diff. Keep durable constraints in [AGENTS.md](https://www.aihero.dev/ai-coding-dictionary/agents-md) and conditional detail in linked references, so each [context window](https://www.aihero.dev/ai-coding-dictionary/context-window) gets useful information.
 
-Before `retro` writes any rule, it classifies the violation. A **mechanical** violation (a banned API, an import shape, a file-location rule) gets a deterministic check, because a check can fail and a sentence in a standards file can't. Only real judgement calls, which no linter can enforce, become prose. If the repo has no guardrail at all (no pre-commit hook, and no CI job that runs lint, typecheck, and tests), `retro` reports that as a finding of its own.
+For an observed **mechanical** violation, consider a deterministic check in existing tooling. For a judgement call, consider focused prose in existing standards. Missing hooks or CI are not findings by themselves. Each proposal should connect to a concrete failure, likely recurrence, expected benefit, and maintenance cost.
 
 ## Common questions
 
 **Does it write the lint rule itself, or wait for a yes? Can I wire it to run after every session?**
 
-It waits. `retro` only proposes. Nothing changes until you pick a candidate, so it edits nothing by hand and installs no hook automatically. This is deliberate. One user asked for exactly this after being "burned by auto-hooks that blocked good changes." It takes judgement to decide what deserves a permanent check, so the skill stays [human-in-the-loop](https://www.aihero.dev/ai-coding-dictionary/human-in-the-loop) and user-invoked. Some users do run it after every implementation run. But a smooth session has little to teach, so a run after every session mostly produces rules nobody needed. There is no dry-run mode. A proposed check is code like any other, so try it against the repo before you let it block merges.
+A retrospective alone produces suggestions; it installs no hooks or CI jobs. If you also requested implementation, the agent can carry out that authorized scope. Try a proposed check against the repository before relying on it. Running after every session is optional, and a session without supported findings needs no new rules.
 
 **Won't this pile up lint rules forever? Does it ever suggest removing one?**
 
@@ -44,24 +44,24 @@ This is the strongest criticism of it. One user found that "once the job is fini
 
 **My session is long. Run it now, or start fresh?**
 
-By default it reviews the current session. That is the best case, because the struggles are still in the context window. If the session has already moved out of the [smart zone](https://www.aihero.dev/ai-coding-dictionary/smart-zone), [clear](https://www.aihero.dev/ai-coding-dictionary/clearing) it, and point a fresh `/retro` at the previous session in the session logs.
+By default it reviews the current session. If the relevant evidence is no longer available in the conversation, point it to the session record or an evidence-preserving handoff. Use the current Codex host's supported history tools instead of assuming another host's clearing commands.
 
-**The agent keeps making the same mistake. Should I add a line to `CLAUDE.md`?**
+**The agent keeps making the same mistake. Should I add a line to `AGENTS.md`?**
 
-Usually not, and `retro` pushes back on this more than anything else. A line in `CLAUDE.md` loads into every session, gives less weight to everything else in the file, and goes out of date as the code changes. If the mistake is mechanical, the fix is a check that fails. If it is a judgement call, it goes in the coding standards the reviewer reads. `AGENTS.md` and `CLAUDE.md` are for navigation pointers and little else. For the same reason, `retro` is not a [memory system](https://www.aihero.dev/ai-coding-dictionary/memory-system). It does not store what happened. It changes the environment so the mistake cannot happen again.
+First identify why the mistake recurs and whether existing guidance or checks already address it. A durable constraint may belong in `AGENTS.md`; a conditional procedure may belong in a linked reference, and a mechanical error may justify a check. Choose the smallest supported change rather than treating every error as a reason to add instructions.
 
 **My setup mentions `CODING_STANDARDS.md` and I don't have one. Where does it come from?**
 
-No skill ships the file. The first time a session finds a judgement-call rule for the reviewer, `retro` proposes to create it. After you accept, [code-review](https://aihero.dev/skills-code-review) reads it. Any other standards doc you already keep, such as `CONTRIBUTING.md`, works the same way.
+No skill ships the file. The first time a session finds a judgement-call rule for the reviewer, `retro` proposes to create it. After you accept, [code-review](https://github.com/26500-R/codex-skills/blob/codex/adaptation/docs/engineering/code-review.md) reads it. Any other standards doc you already keep, such as `CONTRIBUTING.md`, works the same way.
 
 **How is it different from `improve-codebase-architecture`?**
 
-The input is different. [improve-codebase-architecture](https://aihero.dev/skills-improve-codebase-architecture) needs only the code, and looks for structural improvements to it. `retro` needs a session history, and improves the environment the agent works in, not the code. You use both; neither replaces the other.
+The input is different. [improve-codebase-architecture](https://github.com/26500-R/codex-skills/blob/codex/adaptation/docs/engineering/improve-codebase-architecture.md) needs only the code, and looks for structural improvements to it. `retro` needs a session history, and improves the environment the agent works in, not the code. You use both; neither replaces the other.
 
 ## It's working if
 
 - Every candidate points back to a specific moment in the session, not a generic best practice.
-- Repeat mistakes turn into failing checks, and your `AGENTS.md` gets shorter over time, not longer.
+- Recommendations explain their expected benefit and cost, without requiring new infrastructure for every mistake.
 - If a check already existed but was not connected, the finding is to connect it, not a proposal to build a new one.
 - The next session on the same kind of task finds what it needs faster.
 
@@ -75,7 +75,7 @@ grill-with-docs → to-spec → to-tickets → implement → code-review → ret
 
 Run it after a build worth learning from, in the same session or pointed at that session's log. You can skip it after a smooth build.
 
-- [code-review](https://aihero.dev/skills-code-review) is the reviewer agent that `retro` most often tunes. New coding standards go where its Standards axis reads them.
-- [writing-for-agents](https://aihero.dev/skills-writing-for-agents) sets the writing style for every steering file and skill that `retro` proposes, and `retro` loads it before it starts.
+- [code-review](https://github.com/26500-R/codex-skills/blob/codex/adaptation/docs/engineering/code-review.md) is the reviewer agent that `retro` most often tunes. New coding standards go where its Standards axis reads them.
+- [writing-for-agents](https://github.com/26500-R/codex-skills/blob/codex/adaptation/docs/productivity/writing-for-agents.md) sets the writing style for every steering file and skill that `retro` proposes, and `retro` loads it before it starts.
 
-[ask-matt](https://aihero.dev/skills-ask-matt) routes across the whole set when you are unsure which skill the situation needs.
+[ask-matt](https://github.com/26500-R/codex-skills/blob/codex/adaptation/docs/engineering/ask-matt.md) routes across the whole set when you are unsure which skill the situation needs.

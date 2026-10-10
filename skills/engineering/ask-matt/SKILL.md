@@ -1,97 +1,63 @@
 ---
 name: ask-matt
 description: Ask which skill or flow fits your situation. A router over the skills in this repo.
-disable-model-invocation: true
 ---
 
 # Ask Matt
 
-You don't remember every skill, so ask.
+Recommend a skill or a short route through this set for the user's situation. Routing alone does not authorize starting the recommended workflow; if the user already asked you to do the work, continue within that request.
 
-Before stating what a skill does or recommending a step be skipped, read that skill's SKILL.md: the summaries here are for orientation only.
-
-A **flow** is a path through the skills. Most paths run along one **main flow**, and two **on-ramps** merge onto it. Everything else is standalone, or a vocabulary layer that runs underneath.
+Before stating what a skill does or recommending a step be skipped, read that skill's `SKILL.md`. Resolve it from the installed skills location or this repository's promoted buckets. Explicit-only skills may be absent from the automatic skill list; check their files before reporting them missing. In Codex, users invoke them with `$skill-name`; cooperating skills are loaded by reading their instructions, not by assuming a separate Skill tool exists.
 
 ## The main flow: idea → ship
 
-The route most work travels. You have an idea and want it built.
+A **flow** is a possible path, not a required chain. Enter at the step the user's current information and goal need. Reuse settled decisions; a clear implementation request does not need a new interview, spec, or ticket set.
 
-1. **`/grill-with-docs`** sharpens the idea by interview. Start here whenever you are **working in a working directory**: it's stateful, retaining what it learns in `GLOSSARY.md` and ADRs. (No working directory? Use `/grill-me` instead, covered under Standalone. Both run the same `/grilling` primitive; `grill-with-docs` is the one that leaves a paper trail, which makes it the better of the two whenever a repo is there to leave it in.)
-2. **Branch: can you settle every question in conversation?** If a question needs a runnable answer (state, business logic, a UI you have to see), detour through a prototype, bridged by **`/handoff`** in both directions (a prototype lives in its own directory, which is exactly what `/handoff` is for; see Phase boundaries):
-   - **`/handoff`** out, then open a fresh session against that file,
-   - **`/prototype`** to answer the question with throwaway code,
-   - **`/handoff`** back what you learned, and reference it from the original idea thread.
-3. **Branch: is this a multi-session build?**
-   - **Yes** → **`/to-spec`** (turn the thread into a spec), then **`/to-tickets`** to split it into tracer-bullet tickets, each declaring its **blocking edges**. Then work the tickets one of two ways:
-     - **`/implement`** per ticket, **`/clear`ing context between each one**. On a local tracker that's one file per ticket under `.scratch/<feature>/issues/`, worked blockers-first by hand; on a real tracker the edges become native blocking links, so any ticket whose blockers are done can be grabbed. Each ticket is self-contained, so the last one's context is disposable.
-     - **`/implement-spec`** for the whole spec in one run. It reads the tickets as a **task graph**, runs implementer subagents across the ready **frontier** in parallel, and lands everything on one **integration branch**. Reach for it when you'd rather orchestrate the build than drive each ticket yourself.
-   - **No** → **`/implement`** right here, in the same context window.
+1. **`$grill-with-docs`** sharpens an uncertain plan while maintaining relevant glossary terms and ADRs. Use **`$grill-me`** when the user wants the interview without writing those artifacts, including inside a repository. Both use **`$grilling`**.
+2. If a question needs a runnable answer, **`$prototype`** builds a small artifact to settle it. Use **`$handoff`** when that work must travel to another workspace or session; a prototype does not require two handoff files by default.
+3. Choose the build path:
+   - For work that benefits from a durable decision record, **`$to-spec`** synthesizes what is already agreed. **`$to-tickets`** splits larger work into verifiable slices with blocking edges when that decomposition is useful.
+   - **`$implement`** builds the selected ticket, spec, or agreed conversation. It applies **`$tdd`** where useful and **`$code-review`** to the completed task diff.
+   - **`$implement-spec`** manages a whole ticket graph on one integration branch. It uses independent Codex subagents and worktrees where available, and serial execution where dependencies or available tools require it.
+   - Use **`$tdd`** directly for a concrete behavior the user wants test-first, or **`$code-review`** directly for existing work. Neither needs the entire planning flow.
+4. **`$pr`** shapes a pull request body to the change and repository conventions when the authorized task includes writing one.
+5. **`$retro`** reviews a completed effort when the user wants lessons for the agent's environment: navigation, checks, coding standards, instructions, and tooling. It is optional, not automatic follow-on work.
 
-   Either way, the code gets built by driving **`/tdd`** (one red-green slice at a time) and closes out with **`/code-review`**, a two-axis review (Standards + Spec) of the diff. `/implement` runs both per ticket; `/implement-spec`'s implementers each drive `/tdd`, and it runs one `/code-review` over the integration branch. Reach for **`/tdd`** on its own when you just want to build a concrete behaviour test-first without a full spec, and **`/code-review`** on its own whenever you want to review a branch or PR against a fixed point.
+### Context continuity
 
-   When the work goes up as a pull request, **`/pr`** shapes the body: the smallest visual that shows the change, before/after evidence that it works, and a one-way or two-way door call. It's model-invoked, so the agent reaches for it whenever it writes a PR.
-
-4. **`/retro`** closes the loop. After a build, and especially one that went sideways, it looks back over the session and suggests changes to the agent's **environment**, not the code: navigation pointers, automated checks, the coding standards `/code-review` enforces, steering files, tooling. Mechanical mistakes become deterministic checks; judgement calls become coding standards. The next build then starts from a better environment.
-
-### Context hygiene
-
-Keep steps 1–3 in **one unbroken context window** (don't compact or clear until after `/to-tickets`) so the grilling, spec, and tickets all build on the same thinking. Each `/implement` then starts fresh, working from the ticket. Run `/retro` in the session it's looking back on, before you clear; after clearing, point it at that session's log instead.
-
-The limit on this is the **[smart zone](https://www.aihero.dev/ai-coding-dictionary/smart-zone)**: the window (~150k tokens on state-of-the-art models) within which the model still reasons sharply. If a session approaches it before `/to-tickets`, don't push on degraded; `/compact` at the nearest phase boundary and carry on (see Phase boundaries).
+Preserve relevant decisions across planning, specs, and tickets. Continue in the current conversation while it remains useful; use the host's available context management only when needed. There is no fixed token threshold and no requirement to start a new session per ticket. Use **`$handoff`** for a durable transfer when the next session cannot otherwise access the necessary context.
 
 ## On-ramps
 
-A starting situation that generates work, then merges onto the main flow.
-
-- **Bugs and requests piling up** → **`/triage`**. It moves issues through triage roles and produces agent-ready issues, which **`/implement`** later picks up.
-
-  Triage is only for issues **you didn't create**: bug reports, incoming feature requests, anything that arrives raw. Tickets that `/to-tickets` produced are already agent-ready, so **don't triage them**.
-
-- **Something's broken** → **`/diagnosing-bugs`**. For the hard ones: the bug that resists a first glance, the intermittent flake, the regression that crept in between two known-good states. It refuses to theorise until it has a **tight feedback loop** (one command that already goes red on *this* bug), then fixes with a regression test. Once the fix is in, run **`/retro`** in the same session to ask what would have prevented the bug; where the real finding is that there's no good seam to lock it down, that's a job for **`/improve-codebase-architecture`**.
-
-- **A huge, foggy effort: a greenfield project or a huge feature build, too big for one session** → **`/wayfinder`**, the most cognitively demanding flow here. When the way from here to the destination isn't visible yet, it charts a **shared map** of **decision tickets** on the issue tracker and resolves them one at a time, producing **decisions, not deliverables**, until the fog is pushed back and the way is clear. Where **`/grill-with-docs`** sharpens an idea you can hold in one session, wayfinder is for the idea you can't, and it's slower and denser, so save it for exactly that, never a well-scoped feature.
-
-  When the map clears, **it hands off, it doesn't build**: merge onto the main flow at **`/to-spec`**, which collapses the map's linked decisions into a buildable plan, then `/to-tickets` and `/implement` as usual. Looping the map straight into `/implement` skips that collapse and throws the linked detail away, so go straight to `/implement` only when the effort turned out genuinely small.
+- **Raw bugs and requests** → **`$triage`**, which verifies reports and prepares actionable briefs or state recommendations. Already specified tickets do not need another triage pass.
+- **A difficult bug or regression** → **`$diagnosing-bugs`**, which develops a tight feedback loop while using available code and logs to investigate. Lack of a runnable reproduction does not prohibit evidence-based analysis.
+- **A large, uncertain effort** → **`$wayfinder`**, which charts a shared map of decision tickets. It plans by default and continues across ready decisions within the user's scope. When the map clears, `$to-spec` can consolidate decisions for a build; skip that extra artifact when the work is already adequately specified.
 
 ## Codebase health
 
-Not feature work, just upkeep.
-
-- **`/improve-codebase-architecture`** runs whenever you have a spare moment to keep the codebase good for agents to operate in. It surfaces **deepening opportunities**; picking one _generates an idea_ you can take into the main flow at `/grill-with-docs`. It's the survey that finds the candidates; **`/codebase-design`** (below) is the bench you design the chosen one on.
+**`$improve-codebase-architecture`** surveys architectural friction and presents deepening candidates. Use it for an architecture survey, then explore a selected candidate only as requested. **`$codebase-design`** supplies its deep-module concepts and can be consulted directly for an interface or seam question.
 
 ## Vocabulary underneath
 
-Two model-invoked references that run *beneath* the other skills, each the single source of truth for its vocabulary. Reach for them directly when the **words**, not the process, are the problem; or let the skills above pull them in.
-
-- **`/domain-modeling`**: sharpen the project's *domain* language: challenge a fuzzy term, resolve an overloaded word ("account" doing three jobs), record a hard-to-reverse decision as an ADR. It's the active discipline `/grill-with-docs` drives to keep `GLOSSARY.md` a clean glossary.
-- **`/codebase-design`** is the deep-module vocabulary (module, interface, depth, seam, adapter, leverage, locality) for designing a module's *shape*: a lot of behaviour behind a small interface at a clean seam. `/tdd` and `/improve-codebase-architecture` both speak it.
+- **`$domain-modeling`** sharpens domain language and, when requested or established by the repository workflow, maintains `GLOSSARY.md` and ADRs.
+- **`$codebase-design`** supplies module, interface, depth, seam, adapter, leverage, and locality concepts while respecting existing project terminology.
 
 ## Phase boundaries
 
-A **phase** is a chunk of work inside a session: the grilling, the implementation, the QA. At the **boundary** between two of them you have five options, and picking between them is the fuzziest decision in this whole map:
-
-- **Continue**: stay put. Costs nothing, loses nothing.
-- **`/clear`**: empty the window, when nothing here matters to what's next.
-- **`/handoff`** writes a portable markdown file. Narrow: only for a **new harness**, a **new directory**, a **colleague**, or forking a side task **mid-phase**. What it buys is portability.
-- **Subagent**: send a tightly-scoped task to its own window and get a report back.
-- **`/compact`** compresses this context and seeds a fresh session with it. The **default**, at the bottom of the tree rather than the first reach.
-
-Read [PHASE-BOUNDARIES.md](PHASE-BOUNDARIES.md) for the ordered tree: the five questions, the reasoning behind each branch, and why the primary-source cost makes **Continue** the one to rule out first. Make the decision **at** a boundary; mid-phase, continue or split the rest into subagents.
+At a natural boundary, decide whether to continue, transfer context, delegate independent work, or use context management supported by the current Codex host. Read [PHASE-BOUNDARIES.md](PHASE-BOUNDARIES.md) when that choice is the user's question. Do not assume another host's slash commands or token limits apply.
 
 ## Standalone
 
-Off the main flow entirely.
+- **`$grill-me`** is a stateless interview; **`$grilling`** is its underlying question-and-decision workflow.
+- **`$prototype`** creates a focused artifact to answer a design question. Production changes and tracker updates depend on the user's request.
+- **`$research`** investigates a question against primary sources, with delegation and a saved report when the requested work needs them.
+- **`$to-questionnaire`** prepares questions for someone else's knowledge gap. Writing the questionnaire does not itself send it.
+- **`$wizard`** guides steps only a human can perform, using a format and shell appropriate to their environment.
+- **`$wait-what`** re-explains the preceding message at the level and in the language the user needs.
+- **`$teach`** supports learning over multiple sessions with an agreed workspace.
+- **`$writing-for-agents`** guides writing instructions that Codex consumes.
+- **`$handoff`** writes a portable continuation artifact when work must move.
 
-- **`/grill-me`**: the same relentless interview as `/grill-with-docs`, but **stateless**: it saves nothing locally and builds no `GLOSSARY.md`. Reach for it when you are **not working in a working directory** (sharpening a plan, a design, a piece of writing, anything with no repo under it). If you are in a working directory, use `/grill-with-docs` instead: it runs the same interview and leaves a paper trail, so it is strictly the better one.
-- **`/grilling`** is the interview primitive itself: rounds, the frontier, facts are the agent's job and decisions are yours. `/grill-me` and `/grill-with-docs` are the two named ways in, and `/triage`, `/wayfinder` and `/improve-codebase-architecture` all run it internally. Reach for it directly only when you want the interview with no wrapper around it.
-- **`/prototype`** is a small, throwaway program that answers one design question: does this state model feel right, or what should this UI look like. Throwaway is a constraint on how the code is written, not a promise to destroy it: the answer folds into the real code, and the prototype itself is kept as a **primary source** on a `prototype/<name>` branch out of main, pointed at from the implementation issue. It's the detour in step 2 of the main flow, but reach for it any time a design question is hard to settle on paper.
-- **`/research`**: delegate reading legwork to a **background agent**: it investigates a question against **primary sources**, then leaves a cited Markdown file in the repo. Keep working while it reads. The file it produces is something to take *into* the main flow at `/grill-with-docs`, since research feeds the thinking rather than replacing it.
-- **`/to-questionnaire`** comes in when the thing blocking you isn't in your head or the codebase but in **someone else's**, and it writes them a questionnaire to fill in. It's the inverse of `/grill-me`: instead of interviewing you about the subject, it interviews you about the **send** (who it's going to, what you need back) and aims the questions at the gap. What comes back is material for `/grill-with-docs` or `/to-spec`.
-- **`/wizard`** is for the steps only a **human** can take: provisioning infrastructure, setting up credentials or CI secrets, clicking through an unfamiliar third-party dashboard, running a one-off migration or cutover. It generates an interactive bash script that opens each URL, captures each value, and writes it into `.env` and GitHub secrets, so the procedure stops being something you re-explain to an agent every time. Model-invoked, so the agent reaches for it the moment it hits a wall only you can pass. If the agent could just do it itself, it should; this is for where a human is genuinely in the loop.
-- **`/wait-what`** is the corrective for a message that didn't land. Use it mid-conversation, inside any other skill, and the agent re-pitches what it just said with the context you were missing, in plain English, using the `GLOSSARY.md` vocabulary. It works after the fact; `/grill-with-docs` is the upfront cure, because a shared language agreed early is what stops the jargon arriving at all.
-- **`/teach`**: learn a concept over multiple sessions, using the current directory as a stateful workspace.
-- **`/writing-for-agents`** is the reference for writing documents agents consume: skills, AGENTS.md, pointed-at docs.
+## Repository configuration
 
-## Precondition
-
-**`/setup-matt-pocock-skills`**: run before your first engineering flow to configure the issue tracker, triage labels, and doc layout the other skills assume. Custom issue trackers also work.
+**`$setup-matt-pocock-skills`** records persistent tracker, label, and domain-doc conventions in the effective Codex `AGENTS.md` and referenced files. Use existing configuration or explicit task inputs first. Standalone review, debugging, and local work do not need setup.

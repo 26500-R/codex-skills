@@ -1,6 +1,6 @@
 ---
 name: pr
-description: "Use when writing a PR body."
+description: Write a pull request title and body grounded in the final diff, the repository's template, and actual validation results.
 metadata:
   credits:
     skill: show-me
@@ -9,162 +9,20 @@ metadata:
     url: "https://github.com/humanlayer/skills/blob/main/plugins/show-me/skills/show-me/SKILL.md"
 ---
 
-Use this template for writing the PR body:
+Write for a reviewer who has not seen the conversation. Inspect the final diff and follow the repository's PR template when one exists. Use the project's domain language and describe only the final change, its purpose, and the evidence needed to assess it.
 
-```markdown
 ## Summary
 
-<diagram, diff-sketch, or tree>
+Lead with the concrete problem and resulting behavior. A trigger and before/after example can clarify a behavioral change. For a small change, a short paragraph is sufficient.
 
-## Evidence
+Use a diagram, diff sketch, or shallow tree only when it explains structure or control flow more clearly than prose. Keep it limited to the calls, states, and boundaries relevant to this PR; visual material is optional.
 
-- **Before:** <screenshot/output/failing test run>
-  **After:** <screenshot/output/passing test run>
+## Validation
 
-## Merge Danger
+Report checks actually performed and their results. Distinguish passing tests, inspection, and checks that could not run. For a bug fix, include a demonstrated before/after when available; do not invent a failing run. Screenshots help when the change is visual and the environment supports capturing it.
 
-**Door:** <one-way or two-way>
+## Material risks
 
-<optional: description>
+Explain compatibility, migrations, rollout, rollback, or data-loss risks when they matter to this change. Omit empty risk categories and fixed ratings for routine edits. Match detail to impact and uncertainty.
 
-**Blast Radius:** <one-word description>
-
-<optional: potential ramifications of merge>
-```
-
-## Sections
-
-Skip all preambles and keep prose brief. Use the user's domain language from `GLOSSARY.md`.
-
-### Summary
-
-Pick the smallest view that makes the key point clear.
-
-- Show logic or an algorithm as pseudocode:
-
-```text
-on(save)
-  if content is unchanged
-    return cached result
-  write new content
-  return fresh result
-```
-
-- Show runtime control flow as a call tree:
-
-```text
-submitForm
-  createSession
-    persistPrompt
-    launchAgent
-  navigateToSession
-```
-
-- Show UI structure as a component tree, including state and module boundaries that matter:
-
-```text
-<SessionPage> (apps/example/src/routes/session.tsx)
-  useSessionEvents()
-  <SessionToolbar>
-    <RunSkillButton> (packages/ui)
-```
-
-- Show file responsibility or a broad refactor as a shallow file tree:
-
-```text
-src/
-├── commands/       # parses user actions
-├── sessions/       # owns session state
-└── transport/      # sends API requests
-```
-
-- Show component interaction, control flow, or data flow with Mermaid:
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant UI
-    participant Daemon
-    User->>UI: choose command
-    UI->>Daemon: send expanded prompt
-    Daemon-->>UI: stream result
-```
-
-- Use `diff` when the point is what changes and the surrounding shape already exists. Match the diff shape to the topic.
-
-For a component change:
-
-```diff
- <SessionPage>
-   useSessionEvents()
-   <SessionToolbar>
-+    <RunSkillButton />
-   <SessionTimeline>
-+    <SkillResultCard />
-```
-
-For a file-layout change:
-
-```diff
- src/
- ├── commands/
-+│   └── show-me.ts       # expands the slash command
- ├── sessions/
--└── transport.ts
-+└── transport/
-+    ├── client.ts
-+    └── stream.ts
-```
-
-For a call-tree or call-stack change:
-
-```diff
- submitForm
-   createSession
-     persistPrompt
-+    expandSkillMention
-     launchAgent
--  navigateToSession
-+  navigateToSession
-+    subscribeToEvents
-```
-
-For a state or control-flow change:
-
-```diff
- on(save)
--  write content
-+  if content is unchanged
-+    return cached result
-+  write new content
-+  invalidate cache
-```
-
-- Show the whole block when most of it is new, when omitted context would hide ownership or order, or when the user needs a copyable target shape:
-
-```ts
-function expandSkill(command: string): string {
-  const skillName = command.slice(1);
-  return `use the ${skillName} skill`;
-}
-```
-
-#### Guidance
-
-Place each visual next to the short text it supports. Keep only the calls, files, props, states, and boundaries needed to answer the user's current question or the options to resolve the current discussion point.
-
-You may use one of these, you may use several, it is unlikely you will use all of them. Use your judgement and don't overwhelm the user.
-
-### Evidence
-
-Concrete evidence that the change works. Show a before and after.
-
-Screenshots are S-tier - when the environment is set up for it and the change is visual.
-
-Execution-based evidence is A-tier. Test results, console output. Show the exact test that now fails and passes, using pseudocode.
-
-### Merge Danger
-
-Describe whether it's a one-way or two-way door. You can walk back through two-way doors, but not one-way doors. A PR that is cheap to roll back is lower risk. Changes that involve destructive actions or hard-to-reverse decisions are one-way doors.
-
-The blast radius is the potential impact or scope of the changes introduced by this PR. Consider all possibilities. Examples are layout shift, breakages for consumers, mobile responsiveness, etc.
+Writing the body does not itself create or publish a PR. When publication is already part of the task, use the available GitHub tool or CLI and preserve the drafted formatting.

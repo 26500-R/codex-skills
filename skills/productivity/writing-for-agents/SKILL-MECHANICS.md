@@ -1,22 +1,22 @@
 # Skill mechanics
 
-The skill-specific branch of [`writing-for-agents`](SKILL.md): what changes when the document is a skill (frontmatter, the invocation choice, and router skills). Everything else about writing it is the universal reference in `SKILL.md`.
+The skill-specific branch of [`writing-for-agents`](SKILL.md): what changes when the document is a Codex skill (frontmatter, invocation policy, and router skills). The shared writing guidance is in `SKILL.md`.
 
 ## Invocation
 
-Two choices, trading the two loads:
+Every `SKILL.md` requires a `name` and `description`. In Codex, `agents/openai.yaml` controls implicit invocation:
 
-- A **model-invoked** skill keeps a `description`, so the agent can fire it autonomously, and other skills can reach it. You can still type its name: model-invocation always _includes_ user reach; a description only ever adds agent discovery, never removes the human's. The description is the skill's top-level context pointer, forced to stay loaded at all times: permanent context load in exchange for discoverability. A model-invoked skill whose content is all reference is also one home for shared reference: another skill can invoke it, so reference needed by several skills lives in one place. Mechanics: omit `disable-model-invocation`, and write a model-facing description carrying the trigger branches (the pointer-writing rules in `SKILL.md` apply in full).
-- A **user-invoked** skill strips the description from the agent's reach: only the human typing its name can invoke it, and no other skill can. Zero context load, but it spends cognitive load: you are the index that must remember it exists. Mechanics: set `disable-model-invocation: true`; the `description` becomes human-facing: a one-line summary, trigger lists stripped.
+- A **model-invoked** skill has `policy.allow_implicit_invocation: true`, or omits the setting, whose default is true. Its name and description support automatic selection; the body loads when needed. Users can also invoke it explicitly with `$skill-name`.
+- A **user-invoked** skill has `policy.allow_implicit_invocation: false`. It is excluded from automatic context injection and remains available through explicit `$skill-name` invocation. Keep its required description concise and useful to a person choosing it.
 
-Pick model-invocation only when the agent must reach the skill on its own, or another skill must. If it only ever fires by hand, make it user-invoked and pay no context load.
+Preserve an existing policy unless the user requests a change. For a new skill, keep automatic selection enabled unless the user explicitly wants manual invocation. Narrow the description to its actual task; do not disable discovery merely because the workflow contains a consequential action.
 
-Shared reference that two user-invoked skills both need can live in neither: with no descriptions, neither can fire the other. Push it to a plain file outside the skill system: external reference any skill can point at.
+`disable-model-invocation` in YAML frontmatter is a Claude Code convention, not the source of Codex policy. An invocation policy is also not a filesystem access rule: authorized work can read a referenced file, including a `SKILL.md`, without treating it as a new autonomous task. Shared reference can live in a plain file with a conditional pointer from each caller.
 
 ## Splitting by invocation
 
-The invocation cut of splitting (the sequence cut lives in `SKILL.md`): split off a model-invoked skill when you have a distinct leading word that should trigger it on its own (a trigger word you actually use in your prompts), or another skill must reach it. You pay context load for the new always-loaded description, so that independent reach has to be worth it.
+Split off a skill when it has a distinct task and useful independent discovery. A shared reference alone does not need to become another skill. Use conditional file pointers when the material only supports an existing workflow.
 
 ## Router skills
 
-When user-invoked skills multiply past what you can remember, that piled-up cognitive load is cured by a **router skill**: one user-invoked skill that names the others and when to reach for each, so the human has one skill to remember instead of many. It can only hint, never fire them: user-invoked skills have no description, so nothing but the human can reach them.
+When many user-invoked skills are hard to remember, a **router skill** can name the relevant choices and explain when each applies. A router used for advice should recommend the next skill. When the user has already authorized the underlying workflow, apply relevant installed guidance without inventing an extra confirmation gate; retain the destination skill's scope and action boundaries.

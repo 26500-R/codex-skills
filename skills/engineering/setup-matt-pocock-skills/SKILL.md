@@ -1,7 +1,6 @@
 ---
 name: setup-matt-pocock-skills
-description: "Configure this repo for the engineering skills: set up its issue tracker, triage label vocabulary, and domain doc layout. Run once before first use of the other engineering skills."
-disable-model-invocation: true
+description: "Configure persistent repository conventions for the engineering skills: issue tracker, triage labels, and domain docs, recorded in AGENTS.md and referenced files."
 ---
 
 # Setup Matt Pocock's Skills
@@ -12,7 +11,7 @@ Scaffold the per-repo configuration that the engineering skills assume:
 - **Triage labels**: the strings used for the five canonical triage roles
 - **Domain docs**: where `GLOSSARY.md` and ADRs live, and the consumer rules for reading them
 
-This is a prompt-driven skill, not a deterministic script. Explore, present what you found, confirm with the user, then write.
+Explore existing conventions and the user's request, then write the necessary configuration. Ask only about unresolved choices that materially affect the setup; reuse prior answers and authorization. Standalone review, debugging, and local implementation do not require this setup.
 
 ## Process
 
@@ -21,7 +20,7 @@ This is a prompt-driven skill, not a deterministic script. Explore, present what
 Look at the current repo to understand its starting state. Read whatever exists; don't assume:
 
 - `git remote -v` and `.git/config`: is this a GitHub repo? Which one?
-- `AGENTS.md` and `CLAUDE.md` at the repo root: does either exist? Is there already an `## Agent skills` section in either?
+- Effective `AGENTS.md` instructions, including any `AGENTS.override.md` and referenced files: is there already an `## Agent skills` section? Read an existing `CLAUDE.md` only to preserve relevant conventions during migration, not as the default write target.
 - `GLOSSARY.md` and `GLOSSARY-MAP.md` at the repo root
 - `docs/adr/` and any `src/*/docs/adr/` directories
 - `docs/agents/`: does this skill's prior output already exist?
@@ -31,7 +30,7 @@ Look at the current repo to understand its starting state. Read whatever exists;
 
 ### 2. Present findings and ask
 
-Summarise what's present and what's missing. Then take the sections in order. One section, one answer, then the next.
+Summarise what's present and what's missing. Resolve only missing decisions; combine related questions rather than imposing a confirmation round per section.
 
 Lead each section with the recommended answer so the user can accept it in a word. Give a one-line explainer only when the choice genuinely branches; skip the section entirely when exploration already settled it (Section B when `triage` isn't installed, Section C when there's no monorepo).
 
@@ -50,34 +49,28 @@ Record the choice in `docs/agents/issue-tracker.md`. The GitHub and GitLab templ
 
 **Section B: Triage label vocabulary.** Skip this section entirely if the `triage` skill isn't installed (exploration told you), since an uninstalled skill needs no labels.
 
-If it is installed, ask exactly one question:
-
-> Do you want to keep the default triage labels? (recommended: **yes**)
-
-The defaults are the five canonical roles, each label string equal to its name: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. On **yes**, write them as-is. Only if the user says no, usually because their tracker already uses other names (e.g. `bug:triage` for `needs-triage`), collect the overrides so `triage` applies existing labels instead of creating duplicates.
+Reuse existing labels where their roles are clear. Otherwise use the five canonical state names: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`, plus the category roles `bug` and `enhancement`. Ask only when existing names have ambiguous meanings, so `triage` does not create duplicate labels.
 
 **Section C: Domain docs.** Default to **single-context** (one `GLOSSARY.md` + `docs/adr/` at the repo root). This fits almost every repo; write it without asking.
 
 Offer **multi-context** (a root `GLOSSARY-MAP.md` pointing to per-context `GLOSSARY.md` files) only when exploration found monorepo signals. Then confirm which layout they want.
 
-### 3. Confirm and edit
+### 3. Prepare the configuration
 
 Show the user a draft of:
 
-- The `## Agent skills` block to add to whichever of `CLAUDE.md` / `AGENTS.md` is being edited (see step 4 for selection rules)
+- The `## Agent skills` block for the effective Codex instruction file (see step 4)
 - The contents of `docs/agents/issue-tracker.md`, `docs/agents/domain.md`, and `docs/agents/triage-labels.md` (the last only when `triage` is installed)
 
-Let them edit before writing.
+Proceed with configuration covered by the request. Resolve any remaining material choice before writing the affected part; continue independent configuration work.
 
 ### 4. Write
 
 **Pick the file to edit:**
 
-- If `CLAUDE.md` exists, edit it.
-- Else if `AGENTS.md` exists, edit it.
-- If neither exists, ask the user which one to create; don't pick for them.
-
-Never create `AGENTS.md` when `CLAUDE.md` already exists (or vice versa); always edit the one that's already there.
+- Update the effective repository `AGENTS.md` or the canonical file it explicitly references.
+- If `AGENTS.override.md` supersedes it, put the pointer in that effective file or its canonical referenced file.
+- If no Codex instruction file exists, create repository `AGENTS.md`, even when an unrelated `CLAUDE.md` exists. Preserve that existing file.
 
 If an `## Agent skills` block already exists in the chosen file, update its contents in-place rather than appending a duplicate. Don't overwrite user edits to the surrounding sections.
 
@@ -101,7 +94,7 @@ The block:
 
 Include the `### Triage labels` sub-block, and write `docs/agents/triage-labels.md`, only when `triage` is installed and Section B ran. When it isn't, both are omitted.
 
-When Section B ran on GitHub or GitLab, create each configured label the tracker lacks (`gh label create` / `glab label create`).
+When Section B ran and the setup request authorizes tracker configuration, create each configured label the tracker lacks (`gh label create` / `glab label create`). Honor a local-only or draft-only request.
 
 Then write the docs files using the seed templates in this skill folder as a starting point:
 

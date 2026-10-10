@@ -5,7 +5,7 @@ description: Build and sharpen a project's domain model. Use when discussing cod
 
 # Domain Modeling
 
-Actively build and sharpen the project's domain model as you design. This is the *active* discipline: challenging terms, inventing edge-case scenarios, and writing the glossary and decisions down the moment they crystallise. (Merely *reading* `GLOSSARY.md` for vocabulary is not this skill: that's a one-line habit any skill can do. This skill is for when you're changing the model, not just consuming it.)
+Build and sharpen the project's domain model when the task calls for it: challenge ambiguous terms, test concrete scenarios, and distinguish agreed definitions from proposals. Merely reading an existing glossary for vocabulary does not require this workflow.
 
 ## File structure
 
@@ -37,7 +37,7 @@ If a `GLOSSARY-MAP.md` exists at the root, the repo has multiple contexts. The m
 │       └── docs/adr/
 ```
 
-Create files lazily: only when you have something to write. If no `GLOSSARY.md` exists, create one when the first term is resolved. If no `docs/adr/` exists, create it when the first ADR is needed.
+Use the project's existing glossary and decision-record names and locations, including `CONTEXT.md` when that is its established convention. Create or update files only when the user requests durable documentation or the project workflow already calls for it. A discussion that resolves a term does not by itself require a new file.
 
 ## During the session
 
@@ -57,11 +57,11 @@ When domain relationships are being discussed, stress-test them with specific sc
 
 When the user states how something works, check whether the code agrees. If you find a contradiction, surface it: "Your code cancels entire Orders, but you just said partial cancellation is possible. Which is right?"
 
-### Update GLOSSARY.md inline
+### Capture agreed definitions when documentation is in scope
 
-When a term is resolved, update `GLOSSARY.md` right there. Don't batch these up: capture them as they happen. Use the format in [GLOSSARY-FORMAT.md](./GLOSSARY-FORMAT.md).
+When documentation is in scope, update the existing glossary with agreed definitions. Preserve its format; use [GLOSSARY-FORMAT.md](./GLOSSARY-FORMAT.md) when creating a new one. Otherwise keep the definition in the discussion and leave repository files unchanged.
 
-`GLOSSARY.md` should be totally devoid of implementation details. Do not treat `GLOSSARY.md` as a spec, a scratch pad, or a repository for implementation decisions. It is a glossary and nothing else.
+A dedicated glossary contains domain definitions, not a spec, scratch pad, or implementation decisions. Preserve the organization of an existing broader context document rather than stripping unrelated sections to enforce this sample format.
 
 ### Offer ADRs sparingly
 

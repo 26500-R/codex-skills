@@ -21,7 +21,7 @@ Before writing code, write down what state model and what question you're protot
 
 ### 2. Isolate the logic in a portable module
 
-Put the actual logic (the bit that's answering the question) in a single `<script>` block written as a small, pure module that could be lifted out and dropped into the real codebase later. The page around it is throwaway; this module isn't.
+Put the actual logic (the bit that's answering the question) in a single `<script>` block written as a small, pure module, separate from the page. This makes the model easy to inspect and, if implementation is later requested, adapt with production validation.
 
 The right shape depends on the question:
 
@@ -55,7 +55,7 @@ Send them the file, or open it for them. They'll click through the walkthroughs 
 
 ### 5. Capture the answer and the prototype
 
-Once the prototype has answered its question, capture the answer, then capture the prototype the way the [SKILL](SKILL.md) describes. The logic-specific mapping: the validated reducer / machine / function set lifts into the real module (the decision, absorbed); the HTML shell rides along to the throwaway branch that keeps the prototype as a primary source, and being one self-contained file, it stays trivially re-runnable there.
+Report the answer and link the self-contained HTML file as described in [SKILL.md](SKILL.md). State which scenarios were exercised and which remain uncertain. Production integration, commits, branches, and issue updates are separate work unless already included in the request.
 
 ## Anti-patterns
 

@@ -1,7 +1,6 @@
 ---
 name: triage
 description: Move issues and external PRs through a state machine of triage roles, categorise, verify, grill if needed, and write agent-ready briefs.
-disable-model-invocation: true
 ---
 
 # Triage
@@ -38,15 +37,15 @@ Five **state** roles:
 
 For a PR, the same states read against the attached code: `ready-for-agent` means a brief is attached and an agent should take the next step on the diff; `ready-for-human` means it's ready for a human to merge.
 
-Every triaged issue should carry exactly one category role and one state role. If state roles conflict, flag it and ask the maintainer before doing anything else.
+Every triaged issue should carry exactly one category role and one state role. If state roles conflict, use an explicit maintainer instruction to resolve them; otherwise ask before changing state while continuing read-only investigation.
 
-These are canonical role names. The actual label strings used in the issue tracker may differ. The mapping should have been provided to you. If not, tell the user to run `/setup-matt-pocock-skills`.
+These are canonical role names. Read the mapping from existing repository instructions or use labels whose meaning is already clear. Ask only about unresolved mappings needed for the requested mutation; `setup-matt-pocock-skills` is optional when persistent configuration is wanted.
 
-State transitions: an unlabeled issue normally goes to `needs-triage` first; from there it moves to `needs-info`, `ready-for-agent`, `ready-for-human`, or `wontfix`. `needs-info` returns to `needs-triage` once the reporter replies. The maintainer can override at any time; flag transitions that look unusual and ask before proceeding.
+State transitions: an unlabeled issue normally goes to `needs-triage` first; from there it moves to `needs-info`, `ready-for-agent`, `ready-for-human`, or `wontfix`. `needs-info` returns to `needs-triage` once the reporter replies. Honor explicit maintainer overrides; ask about an unusual transition only when its intent remains unclear.
 
 ## Invocation
 
-The maintainer invokes `/triage` and describes what they want in natural language. Interpret the request and act. Examples:
+The maintainer invokes `$triage` and describes what they want in natural language. Interpret the request and act. Examples:
 
 - "Show me anything that needs my attention"
 - "Let's look at #42" (issue or PR)
@@ -69,11 +68,11 @@ Show counts and a one-line summary per item. Let the maintainer pick.
 
 1. **Gather context.** Read the full issue or PR (body, comments, labels, author, dates; for a PR, the diff too). Parse any prior triage notes so you don't re-ask resolved questions. Explore the codebase using the project's domain glossary, respecting ADRs in the area. Run two checks against the codebase: (a) **redundancy**: search for an existing implementation of the requested behavior by domain concept (not just the request's wording), and report where you looked. If found, it's an already-implemented `wontfix` (step 5). (b) **prior rejection**: read `.out-of-scope/*.md` and surface any that resembles this request.
 
-2. **Recommend.** Tell the maintainer your category and state recommendation with reasoning, plus a brief codebase summary relevant to the request (including whether it's already implemented). Wait for direction.
+2. **Recommend.** Tell the maintainer your category and state recommendation with reasoning, plus a brief codebase summary relevant to the request (including whether it's already implemented). For an inspection-only request, leave the recommendation for review. If the requested triage already authorizes the outcome, continue within that authorization.
 
-3. **Verify the claim.** Before any grilling, check that the claim holds up. For a bug, reproduce it from the reporter's steps. For a PR, confirm the diff does what it claims: check it out, run the relevant tests or commands. Report what happened: confirmed (with code path), failed, or insufficient detail (a strong `needs-info` signal). A confirmed verification makes a much stronger agent brief.
+3. **Verify the claim.** Before any grilling, check that the claim holds up. For a bug, try the reporter's reproduction and inspect available evidence. For a PR, inspect the diff and use a separate worktree when checking out code would disturb existing work. Run relevant checks in the permitted environment. Report confirmed (with evidence), failed to reproduce, or insufficient detail; do not turn unavailable runtime access into a claim that the bug is absent.
 
-4. **Grill (if needed).** If the request needs fleshing out, call the Skill tool twice, for "grilling" and "domain-modeling", and grill it into shape a round of questions at a time, sharpening domain terms and updating `GLOSSARY.md`/ADRs inline as decisions land.
+4. **Grill (if needed).** If a material requirement is unresolved, read the installed `grilling/SKILL.md` and ask focused questions. Consult `domain-modeling/SKILL.md` when terminology matters; update domain docs only when requested or required by repository conventions.
 
 5. **Apply the outcome:**
    - `ready-for-agent`: post an agent brief comment ([AGENT-BRIEF.md](AGENT-BRIEF.md)).
@@ -87,7 +86,7 @@ Show counts and a one-line summary per item. Let the maintainer pick.
 
 ## Quick state override
 
-If the maintainer says "move #42 to ready-for-agent", trust them and apply the role directly. Confirm what you're about to do (role changes, comment, close), then act. Skip grilling. If moving to `ready-for-agent` without a grilling session, ask whether they want to write an agent brief.
+If the maintainer says "move #42 to ready-for-agent", apply the requested role directly and report it. Skip grilling and extra confirmation. Add a brief only if requested or covered by the established triage workflow.
 
 ## Needs-info template
 

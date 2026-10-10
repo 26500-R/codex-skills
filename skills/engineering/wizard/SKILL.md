@@ -1,44 +1,42 @@
 ---
 name: wizard
-description: Generate an interactive bash wizard that walks a human through steps only they can perform. Use when provisioning infrastructure, setting up credentials or CI secrets, walking an unfamiliar third-party dashboard, or running a one-off migration or cutover. Don't invoke this for steps the agent can perform itself.
+description: Generate an interactive PowerShell or Bash wizard for a multi-step procedure that requires human input, such as credential setup or a manual cutover. Do not use for steps Codex can complete directly.
 ---
 
 # Wizard
 
-A **wizard** is a bash script that walks a human, step by step, through a manual procedure that's tedious to do by hand and tedious to re-explain to an AI every time. It opens each URL, says exactly what to click and copy, captures the values, writes them where they belong (`.env`, GitHub secrets), confirms at every stage, and shows how many stages are left. It might configure third-party services, run a one-off migration, or move the project from one state to another.
+A **wizard** is a script that walks a human through a manual procedure, opens the relevant URLs, explains what to do, captures values, and writes them to the intended destinations. Use it when a repeatable sequence of human-only steps benefits from a program. A single simple action may need only concise instructions.
 
-The delightful UX is already solved by [template.sh](template.sh): stage-by-stage progress, confirmation gates, cross-platform URL opening (including WSL), hidden secret entry, idempotent `.env` upserts, `gh secret`/`gh variable` writes, and a closing summary. **Your job is only to scope the procedure and author its stages.** The library above the `STAGES` marker is identical in every wizard; that consistency is the point: never hand-edit it.
+Choose the shell the user will run: native PowerShell on Windows, Bash for an established Unix, WSL, or Bash workflow. Follow an explicit preference. The Bash implementation can reuse [template.sh](template.sh); PowerShell guidance is below. Do not assume Bash is installed on Windows.
 
-A wizard is ephemeral by default: built for one run, saved to a scratch or `scripts/` path, deleted when the job's done. Commit it only when the user wants a repeatable setup path that should live in the repo.
+Save a one-off wizard to a suitable scratch or scripts path. Add durable setup documentation or commit it only when that belongs to the requested delivery.
 
 ## Process
 
 ### 1. Scope the procedure
 
-Work out every manual step the human must take and every value that gets captured along the way. Read the repo first, don't ask cold:
+Read the relevant configuration and documentation to identify required values, existing setup, and actual human-only steps. Use example environment files and variable names without exposing existing secret values.
 
-- For setup: `.env`, `.env.example`, `.env.*`, `README`, `docker-compose*`, framework config, and `.github/workflows/*` (every `secrets.*` / `vars.*` reference is a value the wizard must produce).
-- For a migration or transition: the current state, the target state, and the irreversible actions between them.
+State the ordered stages and where each value goes. Continue when the requested setup is clear; ask only for consequential missing choices. Each captured value needs a known source, destination, and secret/public classification.
 
-Then show the user the ordered list of stages and the values each produces, and confirm: they may add, drop, or reorder.
+For each stage, verify the current URL and the path the human follows. Consult current official documentation when the UI is uncertain rather than inventing clicks.
 
-**Done when:** every stage is named in order, and for each captured value you know (a) where the human gets it, (b) where it's written (`.env`, a GitHub secret, both, or nowhere; some stages are pure actions), and (c) whether it's secret (hidden entry) or public.
+### 2. Author for the target shell
 
-### 2. Map each stage's journey
+Keep stages in dependency order. Open a page before requesting its value, hide secret input, avoid logging values, and summarize completed and skipped steps. Confirm irreversible actions at the stage where they occur.
 
-For each stage, write the precise path a human follows: which URL to open, what to do there, where a value is shown, which variable it fills: e.g. "Dashboard → Developers → API keys → Reveal test key → copy". Where you don't actually know the current UI or the exact command, say so and ask the user or check the docs: never invent steps that may not exist.
+| Shell | Implementation |
+| --- | --- |
+| Bash | Copy `template.sh`, author the section below `STAGES`, and set `TOTAL_STAGES`. Reuse its library helpers for prompts, URL opening, environment-file updates, and GitHub writes. |
+| PowerShell | Generate a focused `.ps1` using `Read-Host` and `Read-Host -AsSecureString`, native URL opening, and `-LiteralPath` for file operations. Resolve destinations explicitly, preserve unrelated file content, and use the project's dotenv format. |
 
-**Done when:** every stage traces to concrete instructions a stranger could follow.
+For PowerShell, keep secrets out of command arguments, history, and output. If a destination requires plaintext, convert only for the write, do not display it, and release unmanaged buffers in `finally`. Send GitHub secrets through standard input. Check native command exit codes, and distinguish a skipped or failed write from a completed one.
 
-### 3. Author the wizard
+For either shell, make repeat runs safe for the intended procedure: preserve existing values unless the user replaces them, and avoid repeating irreversible operations automatically. Match each CI secret or variable to an actual project reference.
 
-Copy `template.sh` to the target path. Replace the example stage with one `stage` per step, in dependency order. Use the library helpers: `stage`, `say`/`step`, `open_url`, `ask`/`ask_secret`, `write_env`, `set_secret`/`set_var`, `pause`/`confirm`. Set `TOTAL_STAGES` to the number of stages you wrote.
+### 3. Verify and hand off
 
-Hold the bar the template sets: open the URL before asking for its value, use `ask_secret` for anything secret, `write_env` every persisted value, `set_secret` only the values CI actually needs, and `confirm` before any irreversible action. Each `stage` clears the screen so only the current step is visible: keep a stage to one focused task so nothing the human needs scrolls away. Don't touch the library above the marker.
-
-### 4. Verify and hand off
-
-- `bash -n <script>`; run `shellcheck` if available.
-- `chmod +x <script>`.
-- Don't run it end-to-end yourself: it opens browsers and blocks on human input. Trace it statically instead: every value from step 1 is captured and lands where step 1 said, and every `set_secret` name exactly matches a `secrets.*` reference in CI.
-- Tell the user how to run it. If it's a repeatable setup path, commit it and link it from the README so the next person runs the script instead of asking an AI.
+- Bash: run `bash -n <script>` and ShellCheck when available; make the script executable when the target environment requires it.
+- PowerShell: parse with `System.Management.Automation.Language.Parser.ParseFile` and inspect parser errors; run PSScriptAnalyzer when available.
+- Trace every input to its destination and check that secrets cannot be printed. Exercise pure helpers with fake values in an isolated directory when their behavior is nontrivial.
+- Do not execute the human workflow end to end. Give the user the script, exact run command for their shell, and any unresolved prerequisite. Do not weaken execution policy globally to run it.

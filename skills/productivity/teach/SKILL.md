@@ -1,15 +1,13 @@
 ---
 name: teach
 description: Teach the user a new skill or concept, within this workspace.
-disable-model-invocation: true
-argument-hint: "What would you like to learn about?"
 ---
 
-The user has asked you to teach them something. This is a stateful request - they intend to learn the topic over multiple sessions.
+Use the topic and learning goal supplied with `$teach`, and match the requested teaching scope. For a one-off explanation or exercise, teach directly in the conversation. Use the stateful course workflow below when the user requests a course, reusable lessons, or continuing study in a workspace; an invocation alone does not require a multi-file course.
 
 ## Teaching Workspace
 
-Treat the current directory as a teaching workspace. Workspace paths (`./lessons/` and the rest) resolve from the directory `/teach` was run in; only the `*-FORMAT.md` links resolve from this skill's folder. The state of their learning is captured in this directory in several files:
+For course mode, use the user-designated teaching directory, or the current directory when that is the requested workspace. Workspace paths (`./lessons/` and the rest) resolve from that directory; only the `*-FORMAT.md` links resolve from this skill's folder. Create the following artifacts as the course needs them:
 
 - `MISSION.md`: A document capturing the _reason_ the user is interested in the topic. This should be used to ground all teaching. Use the format in [MISSION-FORMAT.md](./MISSION-FORMAT.md).
 - `./reference/*.html`: A directory of reference materials. These are the compressed learnings from the lessons - cheat sheets, reference algorithms, syntax, yoga poses, glossaries. They are the raw units of learning. They should be beautiful documents which print out well, and are designed for quick reference.
@@ -27,7 +25,7 @@ To learn at a deep level, the user needs three things:
 - **Skills**, acquired through highly-relevant interactive lessons devised by you, based on the knowledge
 - **Wisdom**, which comes from interacting with other learners and practitioners
 
-Before the `RESOURCES.md` is well-populated, your focus should be to find high-quality resources which will help the user acquire knowledge. Never trust your parametric knowledge.
+Use high-quality resources to ground claims that are specialized, uncertain, consequential, or likely to have changed. Explain established concepts directly when appropriate, and verify precise procedures or notation before teaching them. Populate `RESOURCES.md` with sources actually used, without making source collection a prerequisite for every lesson.
 
 Some topics may require more skills than knowledge. Learning more about theoretical physics might be more knowledge-based. For yoga, more skills-based.
 
@@ -52,7 +50,7 @@ A lesson should be **beautiful**, with clean, readable typography and layout, si
 
 The lesson should be short, and completable very quickly. Learners' working memory is very small, and we need to stay within it. But each lesson should give the user a single tangible win that they can build on. It should be directly tied to the mission, and should be in the user's zone of proximal development.
 
-If possible, open the lesson file for the user by running a CLI command.
+If possible, open the lesson file with the host's file preview tool or an appropriate OS command.
 
 Each lesson should link via HTML anchors to other lessons and reference documents.
 
@@ -64,19 +62,19 @@ Each lesson should contain a reminder to ask followup questions to the agent. Th
 
 Lessons are built from reusable **components**, stored in `./assets/`: stylesheets, quiz widgets, simulators, diagram helpers, and anything else a second lesson could reuse.
 
-Reuse is the default, not the exception. Before authoring a lesson, read `./assets/` and build from the components already there. When a lesson needs something new and reusable, write it as a component in `./assets/` and link to it; never inline code a future lesson would duplicate.
+Before authoring a lesson, inspect existing assets and reuse the components that fit. Extract a new shared component when the course actually needs reuse; a one-off explanation does not need a component library.
 
-A shared stylesheet is the first component every workspace earns: every lesson links it, so the lessons look like one consistent course rather than a pile of one-offs. As the workspace grows, so should the component library.
+A course with multiple HTML lessons should share a stylesheet so its lessons remain visually consistent.
 
 ## The Mission
 
 Every lesson should be tied into the mission - the reason that the user is interested in learning about the topic.
 
-If the user is unclear about the mission, or the `MISSION.md` is not populated, your first job should be to question the user on why they want to learn this.
+Use goals and prior knowledge already supplied. Ask about the mission or starting level only when a missing answer would materially change the lesson.
 
 Failing to understand the mission will mean knowledge acquisition is not grounded in real-world goals. Lessons will feel too abstract. You will have no way of judging what the user should do next.
 
-Missions may change as the user develops more skills and knowledge. This is normal - make sure to update the `MISSION.md` and add a learning record to capture the change. Confirm with the user before changing the mission.
+Missions may change as the user develops more skills and knowledge. This is normal - make sure to update the `MISSION.md` and add a learning record to capture the change. Confirm a material mission change unless the user has already requested it.
 
 ## Zone Of Proximal Development
 
@@ -92,7 +90,7 @@ The user may specify an exact thing they want to learn. If they don't, figure ou
 
 Lessons should be designed around a skill the user is going to learn. The knowledge in the lesson should be only what's required to acquire that skill. You teach the knowledge first, then get the user to practice the skills via an interactive feedback loop.
 
-Knowledge should first be gathered from trusted resources. Use `RESOURCES.md` to keep track of them. Lessons should be littered with citations - links to external resources to back up any claim made. This increases the trustworthiness of the lesson.
+Use trusted resources and record those used in `RESOURCES.md` for course mode. Cite sources for claims the learner may need to verify, especially precise, specialized, or changing information. Keep citations close to the relevant material without cluttering elementary explanations.
 
 For acquiring knowledge, difficulty is the enemy. It eats working memory you need for understanding.
 
@@ -107,13 +105,13 @@ For skill acquisition, difficulty is the tool. Effortful retrieval is what build
 
 Each of these should be based on a **feedback loop**, where the user receives feedback on their performance. This feedback loop should be as tight as possible, giving feedback immediately - and ideally automatically.
 
-For quizzes, each answer should be exactly the same number of words (and characters, if possible). Vary which position holds the correct answer across questions. Don't give the user any clues about the answer through formatting or order.
+For quizzes, make distractors plausible and comparable in detail. Vary the correct answer's position, using answer shuffling when supported. Avoid accidental clues from wording, formatting, or order; exact word or character counts are unnecessary. Respect the user's choice to skip an exercise or change the lesson.
 
 ## Acquiring Wisdom
 
 Wisdom comes from true real-world interaction - testing your skills outside the learning environment.
 
-When the user asks a question that appears to require wisdom, your default posture should be to attempt to answer - but to ultimately delegate to a **community**.
+Answer questions that require judgment with the evidence and limits available. Suggest a **community** when experience from practitioners would help the learner test that judgment.
 
 A community is a place (online or offline) where the user can test their skills in the real world. This might be a forum, a subreddit, a real-world class (budget permitting) or a local interest group.
 
